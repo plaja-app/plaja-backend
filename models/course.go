@@ -6,7 +6,7 @@ import "time"
 type Course struct {
 	ID             uint
 	InstructorID   uint
-	Instructor     Account
+	Instructor     User
 	Title          string           `gorm:"size:255"`
 	Descriptions   string           `gorm:"size:65000"`
 	Categories     []CourseCategory `gorm:"many2many:course_categories_junction;"`

@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-// AccountType is the account_type model.
-type AccountType struct {
+// UserType is the user_type model.
+type UserType struct {
 	ID        uint
 	Title     string `gorm:"size:255"`
 	CreatedAt time.Time

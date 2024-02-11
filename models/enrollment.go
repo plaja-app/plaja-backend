@@ -4,8 +4,8 @@ import "time"
 
 // Enrollment is the enrollment model.
 type Enrollment struct {
-	AccountID      uint `gorm:"primaryKey;autoIncrement:false;not null"`
-	Account        Account
+	UserID         uint `gorm:"primaryKey;autoIncrement:false;not null"`
+	User           User
 	CourseID       uint `gorm:"primaryKey;autoIncrement:false;not null"`
 	Course         Course
 	Progress       uint
