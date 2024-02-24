@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plaja-app/back-end/models"
 	"golang.org/x/crypto/bcrypt"
@@ -22,6 +23,9 @@ type LoginBody struct {
 }
 
 func (c *BaseController) Validate(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user")
+	fmt.Println(user)
+
 	w.Write([]byte("Logged in"))
 	w.WriteHeader(http.StatusOK)
 }

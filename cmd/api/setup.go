@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/plaja-app/back-end/config"
+	c "github.com/plaja-app/back-end/controllers"
+	m "github.com/plaja-app/back-end/middleware"
 	"github.com/plaja-app/back-end/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,6 +37,14 @@ func setup(app *config.AppConfig) error {
 	if err != nil {
 		return err
 	}
+
+	// Create controllers
+	bc := c.NewBaseController(app)
+	c.NewControllers(bc)
+
+	// Create middleware
+	bm := m.NewBaseMiddleware(app)
+	m.NewMiddleware(bm)
 
 	return nil
 }
@@ -126,7 +136,12 @@ func runDatabaseMigrations(db *gorm.DB) error {
 	}
 
 	// populate tables with initial data
-	err = createInitialAccountTypes(db)
+	err = createInitialUserTypes(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial user types:", err))
+	}
+
+	err = createInitialCourseCategories(db)
 	if err != nil {
 		return errors.New(fmt.Sprint("error creating initial user types:", err))
 	}
@@ -134,23 +149,53 @@ func runDatabaseMigrations(db *gorm.DB) error {
 	return nil
 }
 
-// createInitialAccountTypes creates initial account types in account_types table.
-func createInitialAccountTypes(db *gorm.DB) error {
+// createInitialUserTypes creates initial account types in account_types table.
+func createInitialUserTypes(db *gorm.DB) error {
 	var count int64
+
 	if err := db.Model(&models.UserType{}).Count(&count).Error; err != nil {
 		return err
 	}
+
 	if count > 0 {
 		return nil
 	}
 
-	initialUserTypes := []models.UserType{
+	initialTypes := []models.UserType{
 		{Title: "Learner", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "Educator", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "Admin", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}
 
-	if err := db.Create(&initialUserTypes).Error; err != nil {
+	if err := db.Create(&initialTypes).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialCourseCategories creates initial course categories in course_categories table.
+func createInitialCourseCategories(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.CourseCategory{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialTypes := []models.CourseCategory{
+		{Title: "Go", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "C++", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "C#", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "Rust", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "Ruby", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "Python", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+	}
+
+	if err := db.Create(&initialTypes).Error; err != nil {
 		return err
 	}
 
