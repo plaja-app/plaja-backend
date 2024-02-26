@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// CourseExerciseCategory is the course_exercise_category model.
+// CourseExerciseCategory is the course exercise_category model.
 type CourseExerciseCategory struct {
 	ID        uint
 	Title     string `gorm:"size:255"`

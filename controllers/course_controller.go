@@ -8,21 +8,19 @@ import (
 	"strings"
 )
 
-// GetCourse
-func (c *BaseController) GetCourseCategory(w http.ResponseWriter, r *http.Request) {
+// GetCourse returns the queried list of models.Course.
+func (c *BaseController) GetCourse(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("id")
-	sortParam := query.Get("sort")
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var courseCategories []models.CourseCategory
+	var data []models.Course
 
 	if idParam == "all" {
-		if sortParam == "title" {
-			c.App.DB.Order("title").Find(&courseCategories)
-		} else {
-			c.App.DB.Find(&courseCategories)
+		err := c.App.DB.Model(&models.Course{}).Preload("Instructor").Preload("Level").Find(&data).Error
+		if err != nil {
+			return
 		}
 	} else {
 		ids := strings.Split(idParam, ",")
@@ -35,12 +33,58 @@ func (c *BaseController) GetCourseCategory(w http.ResponseWriter, r *http.Reques
 			}
 			intIds = append(intIds, id)
 		}
-		c.App.DB.Where("id IN ?", intIds).Find(&courseCategories)
+		err := c.App.DB.Where("id IN ?", intIds).Preload("Instructor").Preload("Level").Find(&data).Error
+		if err != nil {
+			return
+		}
 	}
 
-	if len(courseCategories) == 0 {
+	if len(data) == 0 {
 		http.NotFound(w, r)
 	} else {
-		json.NewEncoder(w).Encode(courseCategories)
+		json.NewEncoder(w).Encode(data)
 	}
 }
+
+//// GetCourse returns the queried list of models.Course.
+//func (c *BaseController) GetCourse(w http.ResponseWriter, r *http.Request) {
+//	// query := r.URL.Query()
+//	//idParam := query.Get("id")
+//
+//	w.Header().Set("Content-Type", "application/json")
+//
+//	var data []models.Course
+//
+//	c.App.DB.Find(&data)
+//
+//	err := c.App.DB.Model(&models.Course{}).Preload("Instructor").Preload("Level").Find(&data).Error
+//	if err != nil {
+//		log.Println(err)
+//		return
+//	}
+//
+//	//if idParam == "all" {
+//	//	c.App.DB.Find(&data)
+//	//} else {
+//	//	ids := strings.Split(idParam, ",")
+//	//	var intIds []int
+//	//	for _, idStr := range ids {
+//	//		id, err := strconv.Atoi(idStr)
+//	//		if err != nil {
+//	//			http.Error(w, "Invalid ID format", http.StatusBadRequest)
+//	//			return
+//	//		}
+//	//		intIds = append(intIds, id)
+//	//	}
+//	//	c.App.DB.Where("id IN ?", intIds).Find(&data)
+//	//	c.App.DB.Model(&data)
+//	//}
+//
+//	//if len(data) == 0 {
+//	//	http.NotFound(w, r)
+//	//} else {
+//	//	json.NewEncoder(w).Encode(data)
+//	//}
+//
+//	json.NewEncoder(w).Encode(data)
+//}

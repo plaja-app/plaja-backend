@@ -141,15 +141,35 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		return errors.New(fmt.Sprint("error creating initial user types:", err))
 	}
 
+	err = createInitialUsers(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial users:", err))
+	}
+
+	err = createInitialCourseLevels(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial course levels:", err))
+	}
+
+	err = createInitialCourseStatuses(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial course statuses:", err))
+	}
+
 	err = createInitialCourseCategories(db)
 	if err != nil {
-		return errors.New(fmt.Sprint("error creating initial user types:", err))
+		return errors.New(fmt.Sprint("error creating initial course categories:", err))
+	}
+
+	err = createInitialCourses(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial courses:", err))
 	}
 
 	return nil
 }
 
-// createInitialUserTypes creates initial account types in account_types table.
+// createInitialUserTypes creates initial user types in user_types table.
 func createInitialUserTypes(db *gorm.DB) error {
 	var count int64
 
@@ -161,13 +181,97 @@ func createInitialUserTypes(db *gorm.DB) error {
 		return nil
 	}
 
-	initialTypes := []models.UserType{
+	initialData := []models.UserType{
 		{Title: "Learner", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "Educator", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "Admin", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}
 
-	if err := db.Create(&initialTypes).Error; err != nil {
+	if err := db.Create(&initialData).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialUsers creates initial users types in users table.
+func createInitialUsers(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.User{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialData := []models.User{
+		{
+			FirstName:  "Plaja",
+			LastName:   "Team",
+			UserName:   "plaja",
+			Email:      "mail@plaja.io",
+			UserTypeID: 3,
+			CreatedAt:  time.Now(),
+			UpdatedAt:  time.Now(),
+		},
+	}
+
+	if err := db.Create(&initialData).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialCourseLevels creates initial course levels in course_levels table.
+func createInitialCourseLevels(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.CourseLevel{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialData := []models.CourseLevel{
+		{Title: "Початковий", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "Середній", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "Високий", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+	}
+
+	if err := db.Create(&initialData).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialCourseStatuses creates initial course statuses types in course_statuses table.
+func createInitialCourseStatuses(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.CourseStatus{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialData := []models.CourseStatus{
+		{Title: "draft", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "being validated", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "revisions required", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "published", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "suspended", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "archived", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+	}
+
+	if err := db.Create(&initialData).Error; err != nil {
 		return err
 	}
 
@@ -186,7 +290,7 @@ func createInitialCourseCategories(db *gorm.DB) error {
 		return nil
 	}
 
-	initialTypes := []models.CourseCategory{
+	initialData := []models.CourseCategory{
 		{Title: "Go", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "C++", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "C#", CreatedAt: time.Now(), UpdatedAt: time.Now()},
@@ -195,7 +299,91 @@ func createInitialCourseCategories(db *gorm.DB) error {
 		{Title: "Python", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}
 
-	if err := db.Create(&initialTypes).Error; err != nil {
+	if err := db.Create(&initialData).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialCourses creates initial courses in courses table.
+func createInitialCourses(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.Course{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialData := []models.Course{
+		{
+			Title:            "Розробка сучасних веб-застосунків із Go",
+			Thumbnail:        "https://img-c.udemycdn.com/course/480x270/3579383_3c67_4.jpg",
+			ShortDescription: "Навчіться створювати сучасні вед-застосунки з Go, HTML, CSS та JavaScript. Курс від професора та знавця своєї справи.",
+			InstructorID:     1,
+			LevelID:          1,
+			Price:            399,
+			HasCertificate:   true,
+			StatusID:         4,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+
+		{
+			Title:            "Використання мікросервісів у Go",
+			Thumbnail:        "https://img-b.udemycdn.com/course/480x270/4606320_764e_2.jpg",
+			ShortDescription: "Створюйте високодоступні, масштабовані, відмовостійкі розподілені додатки з Go.",
+			InstructorID:     1,
+			Price:            599,
+			LevelID:          2,
+			StatusID:         4,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+
+		{
+			Title:            "Svelte та SvelteKit: повний курс",
+			Thumbnail:        "https://img-c.udemycdn.com/course/480x270/5557070_a5f3_3.jpg",
+			ShortDescription: "Створюйте та розгортайте високопродуктивні, доступні, рендерингові веб-застосунки зі Svelte та SvelteKit.",
+			InstructorID:     1,
+			LevelID:          3,
+			Price:            199,
+			StatusID:         4,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+
+		{
+			Title:            "Шаблони проєктування в C++/C#",
+			Thumbnail:        "https://bs-uploads.toptal.io/blackfish-uploads/components/blog_post_page/content/cover_image_file/cover_image/1285782/retina_500x200_COVER-dcbcd112f1d502d97d7f2467c1ce21da.png",
+			ShortDescription: "Дізнайтеся про шаблони проєктування та їх застосування при розробці застосунків на C++.",
+			InstructorID:     1,
+			LevelID:          1,
+			Price:            1199,
+			HasCertificate:   true,
+			StatusID:         4,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+
+		{
+			Title:            "Створення курсів на Plaja",
+			Thumbnail:        "https://plus.unsplash.com/premium_photo-1677109899422-e81b8a9f97b0?q=80&w=2820&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+			ShortDescription: "Курс для тих, хто хоче навчитися створювати власні відкриті або платні курси на платформі Plaja.",
+			InstructorID:     1,
+			LevelID:          2,
+			StatusID:         4,
+			Price:            0,
+			HasCertificate:   true,
+			CreatedAt:        time.Now(),
+			UpdatedAt:        time.Now(),
+		},
+	}
+
+	if err := db.Create(&initialData).Error; err != nil {
 		return err
 	}
 

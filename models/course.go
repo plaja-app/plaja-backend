@@ -4,15 +4,20 @@ import "time"
 
 // Course is the course model.
 type Course struct {
-	ID             uint
-	InstructorID   uint
-	Instructor     User
-	Title          string           `gorm:"size:255"`
-	Descriptions   string           `gorm:"size:65000"`
-	Categories     []CourseCategory `gorm:"many2many:course_categories_junction;"`
-	StatusID       uint             `gorm:"not null"`
-	Status         CourseStatus
-	HasCertificate bool
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID               uint
+	Thumbnail        string
+	Title            string           `gorm:"size:255"`
+	ShortDescription string           `gorm:"size:255"`
+	Description      string           `gorm:"size:65000"`
+	Categories       []CourseCategory `gorm:"many2many:course_categories_junction;"`
+	LevelID          uint             `gorm:"size:50;not null;"`
+	Level            CourseLevel
+	StatusID         uint `gorm:"not null;"`
+	Status           CourseStatus
+	InstructorID     uint `gorm:"not null;"`
+	Price            uint
+	Instructor       User
+	HasCertificate   bool
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }

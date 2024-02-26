@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// UserType is the user_type model.
+// UserType is the user type model.
 type UserType struct {
 	ID        uint
 	Title     string `gorm:"size:255"`

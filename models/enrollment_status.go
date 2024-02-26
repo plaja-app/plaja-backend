@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// EnrollmentStatus is the enrollment_status model.
+// EnrollmentStatus is the enrollment status model.
 type EnrollmentStatus struct {
 	ID        uint
 	Title     string `gorm:"size:255"`

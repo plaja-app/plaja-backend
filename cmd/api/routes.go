@@ -14,6 +14,7 @@ func routes(app *config.AppConfig) http.Handler {
 	r.Use(middleware.Logger)
 
 	r.Get("/api/v1/course_categories", c.Controller.GetCourseCategory)
+	r.Get("/api/v1/courses", c.Controller.GetCourse)
 
 	r.Post("/signup", c.Controller.SignUp)
 	r.Post("/login", c.Controller.Login)

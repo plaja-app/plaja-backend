@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// CourseExercise is the course_exercise model.
+// CourseExercise is the course exercise model.
 type CourseExercise struct {
 	ID         uint
 	CourseID   uint `gorm:"not null"`
