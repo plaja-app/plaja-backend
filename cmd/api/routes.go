@@ -13,15 +13,15 @@ func routes(app *config.AppConfig) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	r.Get("/api/v1/course_categories", c.Controller.GetCourseCategory)
+	r.Get("/api/v1/course-categories", c.Controller.GetCourseCategory)
 	r.Get("/api/v1/courses", c.Controller.GetCourse)
 
-	r.Post("/signup", c.Controller.SignUp)
-	r.Post("/login", c.Controller.Login)
+	r.Post("/api/v1/users/signup", c.Controller.SignUp)
+	r.Post("/api/v1/users/login", c.Controller.Login)
 
-	r.Route("/admin", func(r chi.Router) {
+	r.Route("/api/v1/users", func(r chi.Router) {
 		r.Use(m.Middleware.RequireAuth)
-		r.Get("/validate", c.Controller.Validate)
+		r.Get("/getme", c.Controller.GetMe)
 	})
 
 	return r

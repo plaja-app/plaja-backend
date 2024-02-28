@@ -2,16 +2,17 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plaja-app/back-end/models"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strings"
 	"time"
 )
 
 // SignupBody is the signup request body structure.
 type SignupBody struct {
+	FullName string `json:"fullName"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -22,12 +23,66 @@ type LoginBody struct {
 	Password string `json:"password"`
 }
 
-func (c *BaseController) Validate(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user")
-	fmt.Println(user)
+//func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
+//	// get the cookie of request
+//	tokenCookie, err := r.Cookie("pja_user_jwt")
+//	if err != nil {
+//		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+//		return
+//	}
+//
+//	// decode/validate it
+//	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
+//		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+//			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+//		}
+//		return []byte(c.App.Env.JWTSecret), nil
+//	})
+//
+//	if err != nil {
+//		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+//		return
+//	}
+//
+//	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+//		// check the exp
+//		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+//			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+//			return
+//		}
+//
+//		// find the user with token sub
+//		var user models.User
+//		result := c.App.DB.First(&user, claims["sub"])
+//		if result.Error != nil || user.ID == 0 {
+//			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+//			return
+//		}
+//
+//		w.WriteHeader(http.StatusOK)
+//		json.NewEncoder(w).Encode(user)
+//	} else {
+//		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+//	}
+//}
 
-	w.Write([]byte("Logged in"))
-	w.WriteHeader(http.StatusOK)
+func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
+	userCtx := r.Context().Value("user")
+	if userCtx == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, ok := userCtx.(models.User)
+	if !ok {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+	}
 }
 
 // SignUp handles the signup request.
@@ -49,8 +104,14 @@ func (c *BaseController) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// parse name
+	fullNameSlice := strings.Split(body.FullName, " ")
+	firstName, lastName := fullNameSlice[0], fullNameSlice[1]
+
 	// create a new user model
 	user := models.User{
+		FirstName:  firstName,
+		LastName:   lastName,
 		Email:      body.Email,
 		Password:   string(hashedPassword),
 		UserTypeID: 1,
@@ -59,11 +120,11 @@ func (c *BaseController) SignUp(w http.ResponseWriter, r *http.Request) {
 	// add user to the database
 	result := c.App.DB.Create(&user)
 	if result.Error != nil {
-		http.Error(w, "Error creating user", http.StatusBadRequest)
+		http.Error(w, "Error creating user", http.StatusConflict)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Login handles the login request.
@@ -111,6 +172,7 @@ func (c *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 	// create and set a cookie
 	cookie := http.Cookie{
 		Name:     "pja_user_jwt",
+		Path:     "/",
 		Value:    tokenString,
 		MaxAge:   3600 * 24 * 30,
 		Secure:   false,
