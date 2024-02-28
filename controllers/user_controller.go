@@ -23,49 +23,6 @@ type LoginBody struct {
 	Password string `json:"password"`
 }
 
-//func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
-//	// get the cookie of request
-//	tokenCookie, err := r.Cookie("pja_user_jwt")
-//	if err != nil {
-//		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-//		return
-//	}
-//
-//	// decode/validate it
-//	token, err := jwt.Parse(tokenCookie.Value, func(token *jwt.Token) (interface{}, error) {
-//		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-//			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-//		}
-//		return []byte(c.App.Env.JWTSecret), nil
-//	})
-//
-//	if err != nil {
-//		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-//		return
-//	}
-//
-//	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-//		// check the exp
-//		if float64(time.Now().Unix()) > claims["exp"].(float64) {
-//			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-//			return
-//		}
-//
-//		// find the user with token sub
-//		var user models.User
-//		result := c.App.DB.First(&user, claims["sub"])
-//		if result.Error != nil || user.ID == 0 {
-//			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-//			return
-//		}
-//
-//		w.WriteHeader(http.StatusOK)
-//		json.NewEncoder(w).Encode(user)
-//	} else {
-//		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-//	}
-//}
-
 func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
 	userCtx := r.Context().Value("user")
 	if userCtx == nil {
@@ -175,6 +132,22 @@ func (c *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Value:    tokenString,
 		MaxAge:   3600 * 24 * 30,
+		Secure:   false,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &cookie)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// Logout handles the logout request by invalidating the user's session cookie.
+func (c *BaseController) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie := http.Cookie{
+		Name:     "pja_user_jwt",
+		Path:     "/",
+		Value:    "",
+		MaxAge:   -1,
 		Secure:   false,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,

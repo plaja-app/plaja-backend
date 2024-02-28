@@ -18,6 +18,7 @@ func routes(app *config.AppConfig) http.Handler {
 
 	r.Post("/api/v1/users/signup", c.Controller.SignUp)
 	r.Post("/api/v1/users/login", c.Controller.Login)
+	r.Post("/api/v1/users/logout", c.Controller.Logout)
 
 	r.Route("/api/v1/users", func(r chi.Router) {
 		r.Use(m.Middleware.RequireAuth)
