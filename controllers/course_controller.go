@@ -8,8 +8,14 @@ import (
 	"strings"
 )
 
-// GetCourse returns the queried list of models.Course.
-func (c *BaseController) GetCourse(w http.ResponseWriter, r *http.Request) {
+// courseCreationBody is the course creation request body structure.
+type courseCreationBody struct {
+	Title      string                  `json:"fullName"`
+	Categories []models.CourseCategory `json:"categories"`
+}
+
+// GetCourses returns the queried list of models.Course.
+func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("id")
 
@@ -44,4 +50,31 @@ func (c *BaseController) GetCourse(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode(data)
 	}
+}
+
+// CreateCourse creates a new course in the courses table.
+func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
+	var body courseCreationBody
+
+	err := json.NewDecoder(r.Body).Decode(&body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, "Failed to read body", http.StatusBadRequest)
+		return
+	}
+
+	var course models.Course
+
+	course = models.Course{
+		Title:      body.Title,
+		Categories: body.Categories,
+	}
+
+	result := c.App.DB.Create(&course)
+	if result.Error != nil {
+		http.Error(w, "Error creating user", http.StatusConflict)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }

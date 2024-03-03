@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// GetCourseCategory returns the queried list of models.CourseCategory.
-func (c *BaseController) GetCourseCategory(w http.ResponseWriter, r *http.Request) {
+// GetCourseCategories returns the queried list of models.CourseCategory.
+func (c *BaseController) GetCourseCategories(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	idParam := query.Get("id")
 	sortParam := query.Get("sort")

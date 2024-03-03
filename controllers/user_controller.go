@@ -6,23 +6,25 @@ import (
 	"github.com/plaja-app/back-end/models"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// SignupBody is the signup request body structure.
-type SignupBody struct {
+// signupBody is the signup request body structure.
+type signupBody struct {
 	FullName string `json:"fullName"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// LoginBody is the login request body structure.
-type LoginBody struct {
+// loginBody is the login request body structure.
+type loginBody struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
+// GetMe returns the model of the current user (see models.User).
 func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
 	userCtx := r.Context().Value("user")
 	if userCtx == nil {
@@ -44,7 +46,7 @@ func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
 
 // SignUp handles the signup request.
 func (c *BaseController) SignUp(w http.ResponseWriter, r *http.Request) {
-	var body SignupBody
+	var body signupBody
 
 	// decode the request body
 	err := json.NewDecoder(r.Body).Decode(&body)
@@ -86,7 +88,7 @@ func (c *BaseController) SignUp(w http.ResponseWriter, r *http.Request) {
 
 // Login handles the login request.
 func (c *BaseController) Login(w http.ResponseWriter, r *http.Request) {
-	var body LoginBody
+	var body loginBody
 
 	// get the email and password off request body
 	err := json.NewDecoder(r.Body).Decode(&body)
@@ -155,4 +157,42 @@ func (c *BaseController) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookie)
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// GetUsers returns the queried list of models.User.
+func (c *BaseController) GetUsers(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	idParam := query.Get("id")
+
+	w.Header().Set("Content-Type", "application/json")
+
+	var data []models.User
+
+	if idParam == "all" {
+		err := c.App.DB.Model(&models.User{}).Preload("UserType").Find(&data).Error
+		if err != nil {
+			return
+		}
+	} else {
+		ids := strings.Split(idParam, ",")
+		var intIds []int
+		for _, idStr := range ids {
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				http.Error(w, "Invalid ID format", http.StatusBadRequest)
+				return
+			}
+			intIds = append(intIds, id)
+		}
+		err := c.App.DB.Where("id IN ?", intIds).Preload("UserType").Find(&data).Error
+		if err != nil {
+			return
+		}
+	}
+
+	if len(data) == 0 {
+		http.NotFound(w, r)
+	} else {
+		json.NewEncoder(w).Encode(data)
+	}
 }
