@@ -10,13 +10,13 @@ type Course struct {
 	ShortDescription string           `gorm:"size:255"`
 	Description      string           `gorm:"size:65000"`
 	Categories       []CourseCategory `gorm:"many2many:course_categories_junction;"`
-	LevelID          uint             `gorm:"size:50;not null;"`
+	LevelID          uint             `gorm:"not null;"`
 	Level            CourseLevel
-	StatusID         uint `gorm:"not null;"`
-	Status           CourseStatus
-	InstructorID     uint `gorm:"not null;"`
-	Price            uint
+	StatusID         uint         `gorm:"not null;"`
+	Status           CourseStatus `json:"-"`
+	InstructorID     uint         `gorm:"not null;"`
 	Instructor       User
+	Price            uint
 	HasCertificate   bool
 	CreatedAt        time.Time
 	UpdatedAt        time.Time

@@ -8,10 +8,18 @@ import (
 	"strings"
 )
 
+// courseCategory is the models.CourseCategory DTO.
+type courseCategory struct {
+	ID    uint
+	Title string
+}
+
 // courseCreationBody is the course creation request body structure.
 type courseCreationBody struct {
-	Title      string                  `json:"fullName"`
-	Categories []models.CourseCategory `json:"categories"`
+	Title        string
+	Categories   []courseCategory
+	LevelID      uint
+	InstructorID uint
 }
 
 // GetCourses returns the queried list of models.Course.
@@ -63,16 +71,28 @@ func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var course models.Course
+	var courseCategories []models.CourseCategory
+	for _, c := range body.Categories {
+		category := models.CourseCategory{
+			ID:    c.ID,
+			Title: c.Title,
+		}
 
+		courseCategories = append(courseCategories, category)
+	}
+
+	var course models.Course
 	course = models.Course{
-		Title:      body.Title,
-		Categories: body.Categories,
+		Title:        body.Title,
+		Categories:   courseCategories,
+		LevelID:      body.LevelID,
+		StatusID:     1, // draft
+		InstructorID: body.InstructorID,
 	}
 
 	result := c.App.DB.Create(&course)
 	if result.Error != nil {
-		http.Error(w, "Error creating user", http.StatusConflict)
+		http.Error(w, "Error creating course", http.StatusBadRequest)
 		return
 	}
 
