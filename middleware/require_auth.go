@@ -38,7 +38,7 @@ func (m *BaseMiddleware) RequireAuth(next http.Handler) http.Handler {
 			// find the user with token sub
 			var user models.User
 
-			m.App.DB.First(&user, claims["sub"])
+			m.App.DB.Preload("UserType").First(&user, "id = ?", claims["sub"])
 
 			if user.ID == 0 {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
