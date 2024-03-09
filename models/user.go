@@ -4,10 +4,10 @@ import "time"
 
 // User is the user model.
 type User struct {
-	ID         uint   `gorm:"type:int;"`
+	ID         uint `gorm:"type:int;"`
+	ProfilePic string
 	FirstName  string `gorm:"size:255;"`
 	LastName   string `gorm:"size:255;"`
-	UserName   string `gorm:"size:255;"`
 	Email      string `gorm:"size:255;unique;"`
 	Password   string `gorm:"size:255" json:"-"`
 	UserTypeID uint   `gorm:"not null"`

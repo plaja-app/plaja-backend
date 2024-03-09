@@ -104,14 +104,14 @@ func (c *BaseController) Login(w http.ResponseWriter, r *http.Request) {
 	c.App.DB.First(&user, "email = ?", body.Email)
 
 	if user.ID == 0 {
-		http.Error(w, "Invalid email", http.StatusBadRequest)
+		http.Error(w, "Invalid email", http.StatusUnauthorized)
 		return
 	}
 
 	// compare sent in password with saved user password hash
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 	if err != nil {
-		http.Error(w, "Invalid password", http.StatusBadRequest)
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
 		return
 	}
 
@@ -195,4 +195,46 @@ func (c *BaseController) GetUsers(w http.ResponseWriter, r *http.Request) {
 	} else {
 		json.NewEncoder(w).Encode(data)
 	}
+}
+
+// UpdateUser handles the update request of the user's information.
+func (c *BaseController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	//var body signupBody
+	//
+	//// decode the request body
+	//err := json.NewDecoder(r.Body).Decode(&body)
+	//defer r.Body.Close()
+	//if err != nil {
+	//	http.Error(w, "Failed to read body", http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//// hash password
+	//hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+	//if err != nil {
+	//	http.Error(w, "Error hashing password", http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//// parse name
+	//fullNameSlice := strings.Split(body.FullName, " ")
+	//firstName, lastName := fullNameSlice[0], fullNameSlice[1]
+	//
+	//// create a new user model
+	//user := models.User{
+	//	FirstName:  firstName,
+	//	LastName:   lastName,
+	//	Email:      body.Email,
+	//	Password:   string(hashedPassword),
+	//	UserTypeID: 1,
+	//}
+	//
+	//// add user to the database
+	//result := c.App.DB.Create(&user)
+	//if result.Error != nil {
+	//	http.Error(w, "Error creating user", http.StatusConflict)
+	//	return
+	//}
+	//
+	//w.WriteHeader(http.StatusCreated)
 }

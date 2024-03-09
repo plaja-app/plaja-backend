@@ -210,7 +210,6 @@ func createInitialUsers(db *gorm.DB) error {
 		{
 			FirstName:  "Plaja",
 			LastName:   "Team",
-			UserName:   "plaja",
 			Email:      "mail@plaja.io",
 			UserTypeID: 3,
 			CreatedAt:  time.Now(),
@@ -371,7 +370,7 @@ func createInitialCourses(db *gorm.DB) error {
 
 		{
 			Title:            "Створення курсів на Plaja",
-			Thumbnail:        "https://plus.unsplash.com/premium_photo-1677109899422-e81b8a9f97b0?q=80&w=2820&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+			Thumbnail:        "http://localhost:8080/api/v1/storage/service/courses/c1_thumbnail.png",
 			ShortDescription: "Курс для тих, хто хоче навчитися створювати власні відкриті або платні курси на платформі Plaja.",
 			InstructorID:     1,
 			LevelID:          2,

@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/plaja-app/back-end/models"
+	"gorm.io/gorm"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,39 +27,72 @@ type courseCreationBody struct {
 // GetCourses returns the queried list of models.Course.
 func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	idParam := query.Get("id")
+
+	id := query.Get("id")
+	statusID := query.Get("status_id")
+	instructorID := query.Get("instructor_id")
+	levelID := query.Get("level_id")
+	hasCertificate := query.Get("has_certificate")
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var data []models.Course
+	var courses []models.Course
+	dbQuery := c.App.DB
 
-	if idParam == "all" {
-		err := c.App.DB.Model(&models.Course{}).Preload("Instructor").Preload("Level").Find(&data).Error
-		if err != nil {
-			return
-		}
-	} else {
-		ids := strings.Split(idParam, ",")
-		var intIds []int
-		for _, idStr := range ids {
-			id, err := strconv.Atoi(idStr)
-			if err != nil {
-				http.Error(w, "Invalid ID format", http.StatusBadRequest)
-				return
+	if id != "" {
+		if id != "all" {
+			ids := strings.Split(id, ",")
+			var intIds []int
+			for _, idStr := range ids {
+				intId, err := strconv.Atoi(idStr)
+				if err != nil {
+					http.Error(w, "Invalid ID format", http.StatusBadRequest)
+					return
+				}
+				intIds = append(intIds, intId)
 			}
-			intIds = append(intIds, id)
-		}
-		err := c.App.DB.Where("id IN ?", intIds).Preload("Instructor").Preload("Level").Find(&data).Error
-		if err != nil {
-			return
+			dbQuery = dbQuery.Where("id IN ?", intIds)
 		}
 	}
 
-	if len(data) == 0 {
-		http.NotFound(w, r)
-	} else {
-		json.NewEncoder(w).Encode(data)
+	if statusID != "" {
+		dbQuery = dbQuery.Where("status_id = ?", statusID)
 	}
+
+	if instructorID != "" {
+		dbQuery = dbQuery.Where("instructor_id = ?", instructorID)
+	}
+
+	if levelID != "" {
+		dbQuery = dbQuery.Where("level_id = ?", levelID)
+	}
+
+	if hasCertificate != "" {
+		hasCertBool, err := strconv.ParseBool(hasCertificate)
+		if err != nil {
+			http.Error(w, "Invalid format for has_certificate", http.StatusBadRequest)
+			return
+		}
+		dbQuery = dbQuery.Where("has_certificate = ?", hasCertBool)
+	}
+
+	dbQuery = dbQuery.Preload("Instructor").Preload("Level")
+
+	if err := dbQuery.Find(&courses).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			http.NotFound(w, r)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if len(courses) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+
+	json.NewEncoder(w).Encode(courses)
 }
 
 // CreateCourse creates a new course in the courses table.
@@ -84,6 +119,7 @@ func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	var course models.Course
 	course = models.Course{
 		Title:        body.Title,
+		Thumbnail:    "http://localhost:8080/api/v1/storage/service/courses/no_thumbnail.png",
 		Categories:   courseCategories,
 		LevelID:      body.LevelID,
 		StatusID:     1, // draft

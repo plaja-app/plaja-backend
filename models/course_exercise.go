@@ -11,6 +11,7 @@ type CourseExercise struct {
 	CategoryID uint                   `gorm:"not null"`
 	Category   CourseExerciseCategory `json:"-"`
 	Content    string                 `gorm:"size:65000"`
+	Length     string                 `gorm:"size:5"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
