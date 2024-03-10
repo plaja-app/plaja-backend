@@ -28,8 +28,11 @@ func routes(app *config.AppConfig) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(m.Middleware.RequireAuth)
 		r.Get("/api/v1/users/getme", c.Controller.GetMe)
-		r.Post("/api/v1/courses/create", c.Controller.CreateCourse)
 		r.Post("/api/v1/users/update-user", c.Controller.UpdateUser)
+
+		r.Post("/api/v1/courses/create", c.Controller.CreateCourse)
+
+		r.Post("/api/v1/course-certificates/create", c.Controller.CreateCourseCertificate)
 	})
 
 	r.Get("/api/v1/storage/*", c.Controller.GetImage)

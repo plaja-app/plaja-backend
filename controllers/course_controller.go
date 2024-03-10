@@ -95,7 +95,7 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(courses)
 }
 
-// CreateCourse creates a new course in the courses table.
+// CreateCourse creates a new models.Course.
 func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	var body courseCreationBody
 

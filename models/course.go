@@ -16,6 +16,7 @@ type Course struct {
 	Status           CourseStatus `json:"-"`
 	InstructorID     uint         `gorm:"not null;"`
 	Instructor       User
+	Length           uint
 	Price            uint
 	HasCertificate   bool
 	CreatedAt        time.Time
