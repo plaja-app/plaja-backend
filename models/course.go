@@ -16,6 +16,7 @@ type Course struct {
 	Status           CourseStatus `json:"-"`
 	InstructorID     uint         `gorm:"not null;"`
 	Instructor       User
+	Exercises        []CourseExercise `gorm:"foreignkey:CourseID"`
 	Length           uint
 	Price            uint
 	HasCertificate   bool

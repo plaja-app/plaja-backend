@@ -4,14 +4,14 @@ import "time"
 
 // CourseExercise is the course exercise model.
 type CourseExercise struct {
-	ID         uint
-	CourseID   uint                   `gorm:"not null"`
-	Course     Course                 `json:"-"`
-	Title      string                 `gorm:"size:255"`
-	CategoryID uint                   `gorm:"not null"`
-	Category   CourseExerciseCategory `json:"-"`
-	Content    string                 `gorm:"size:65000"`
-	Length     uint
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID        uint
+	Title     string `gorm:"size:255"`
+	Content   string `gorm:"size:65000"`
+	Length    uint
+	CourseID  uint   `gorm:"not null"`
+	Course    Course `json:"-"`
+	TypeID    uint   `gorm:"not null"`
+	Type      CourseExerciseType
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

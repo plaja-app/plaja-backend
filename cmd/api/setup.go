@@ -120,7 +120,7 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		return err
 	}
 
-	err = db.AutoMigrate(&models.CourseExerciseCategory{})
+	err = db.AutoMigrate(&models.CourseExerciseType{})
 	if err != nil {
 		return err
 	}
@@ -131,6 +131,11 @@ func runDatabaseMigrations(db *gorm.DB) error {
 	}
 
 	err = db.AutoMigrate(&models.Enrollment{})
+	if err != nil {
+		return err
+	}
+
+	err = db.AutoMigrate(&models.TeachingApplication{})
 	if err != nil {
 		return err
 	}
@@ -164,6 +169,11 @@ func runDatabaseMigrations(db *gorm.DB) error {
 	err = createInitialCourses(db)
 	if err != nil {
 		return errors.New(fmt.Sprint("error creating initial courses:", err))
+	}
+
+	err = createInitialCourseExerciseTypes(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial course exercise types:", err))
 	}
 
 	return nil
@@ -268,6 +278,30 @@ func createInitialCourseStatuses(db *gorm.DB) error {
 		{Title: "published", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "suspended", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "archived", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+	}
+
+	if err := db.Create(&initialData).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialCourseExerciseTypes creates initial course exercise types in course_exercise_types table.
+func createInitialCourseExerciseTypes(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.CourseExerciseType{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialData := []models.CourseExerciseType{
+		{Title: "article", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "video", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}
 
 	if err := db.Create(&initialData).Error; err != nil {
