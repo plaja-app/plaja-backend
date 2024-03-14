@@ -110,7 +110,7 @@ func generateCertificate() (string, error) {
 	dc.DrawImage(img, 0, 0)
 
 	// Add logo and signature
-	img, err = loadImage("./storage/service/logo/logo_dark.png")
+	img, err = loadImage("./storage/service/logo/logo-dark.png")
 	if err != nil {
 		return "", err
 	}
@@ -185,7 +185,7 @@ func generateCertificate() (string, error) {
 	}
 
 	// Save the final image
-	path := fmt.Sprintf("/storage/certificates/certificate_%d.png", 0)
+	path := fmt.Sprintf("/storage/certificates/%d-certificate.png", 0)
 	if err := dc.SavePNG(fmt.Sprintf(".%s", path)); err != nil {
 		log.Fatalf("error saving image to %s: %v", path, err)
 	}

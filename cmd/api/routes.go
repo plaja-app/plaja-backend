@@ -31,6 +31,7 @@ func routes(app *config.AppConfig) http.Handler {
 		r.Post("/api/v1/users/update-user", c.Controller.UpdateUser)
 
 		r.Post("/api/v1/courses/create", c.Controller.CreateCourse)
+		r.Post("/api/v1/courses/update-general", c.Controller.UpdateGeneralCourse)
 
 		r.Post("/api/v1/course-certificates/create", c.Controller.CreateCourseCertificate)
 	})

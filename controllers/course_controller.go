@@ -3,9 +3,13 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/plaja-app/back-end/models"
 	"gorm.io/gorm"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -18,10 +22,21 @@ type courseCategory struct {
 
 // courseCreationBody is the course creation request body structure.
 type courseCreationBody struct {
-	Title        string
-	Categories   []courseCategory
-	LevelID      uint
-	InstructorID uint
+	Title          string
+	Categories     []courseCategory
+	LevelID        uint
+	HasCertificate bool
+	InstructorID   uint
+}
+
+// courseUpdateGeneralBody is the course general information update request body structure.
+type courseUpdateGeneralBody struct {
+	Title            string
+	ShortDescription string
+	Description      string
+	Price            uint
+	InstructorID     uint
+	CourseID         uint
 }
 
 // GetCourses returns the queried list of models.Course.
@@ -76,7 +91,8 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 		dbQuery = dbQuery.Where("has_certificate = ?", hasCertBool)
 	}
 
-	dbQuery = dbQuery.Preload("Instructor").Preload("Level")
+	// TODO: Categories
+	dbQuery = dbQuery.Preload("Instructor").Preload("Level").Preload("Categories")
 
 	if err := dbQuery.Find(&courses).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -118,12 +134,13 @@ func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 
 	var course models.Course
 	course = models.Course{
-		Title:        body.Title,
-		Thumbnail:    "http://localhost:8080/api/v1/storage/service/courses/no_thumbnail.png",
-		Categories:   courseCategories,
-		LevelID:      body.LevelID,
-		StatusID:     1, // draft
-		InstructorID: body.InstructorID,
+		Title:          body.Title,
+		Thumbnail:      "http://localhost:8080/api/v1/storage/service/courses/no-thumbnail.png",
+		Categories:     courseCategories,
+		LevelID:        body.LevelID,
+		StatusID:       1, // draft
+		HasCertificate: body.HasCertificate,
+		InstructorID:   body.InstructorID,
 	}
 
 	result := c.App.DB.Create(&course)
@@ -133,4 +150,86 @@ func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+// UpdateGeneralCourse handles the update operation for general course information.
+func (c *BaseController) UpdateGeneralCourse(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20) // 10 MB
+	if err != nil {
+		http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+		return
+	}
+
+	var body courseUpdateGeneralBody
+	body.Title = r.FormValue("Title")
+	body.ShortDescription = r.FormValue("ShortDescription")
+	body.Description = r.FormValue("Description")
+
+	price, err := strconv.ParseUint(r.FormValue("Price"), 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid price", http.StatusBadRequest)
+		return
+	}
+	body.Price = uint(price)
+
+	courseID, err := strconv.ParseUint(r.FormValue("CourseID"), 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid course id", http.StatusBadRequest)
+		return
+	}
+	body.CourseID = uint(courseID)
+
+	instructorID, err := strconv.ParseUint(r.FormValue("InstructorID"), 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid instructor id", http.StatusBadRequest)
+		return
+	}
+	body.InstructorID = uint(instructorID)
+
+	var fileURL string
+
+	file, _, err := r.FormFile("Thumbnail")
+	if err == nil && file != nil {
+		defer file.Close()
+
+		storagePath := "storage/courses/thumbnails"
+		os.MkdirAll(storagePath, os.ModePerm)
+
+		filePath := filepath.Join(storagePath, fmt.Sprintf("%d-%s", body.CourseID, "thumbnail.png"))
+
+		dst, err := os.Create(filePath)
+		if err != nil {
+			http.Error(w, "Failed to save the file", http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+		_, err = io.Copy(dst, file)
+		if err != nil {
+			http.Error(w, "Failed to write the file", http.StatusInternalServerError)
+			return
+		}
+
+		fileURL = fmt.Sprintf("http://localhost:8080/api/v1/%s", filePath)
+	}
+
+	updateData := map[string]interface{}{
+		"ShortDescription": body.ShortDescription,
+		"Title":            body.Title,
+		"Description":      body.Description,
+		"Price":            body.Price,
+		"InstructorID":     body.InstructorID,
+	}
+
+	if fileURL != "" {
+		updateData["Thumbnail"] = fileURL
+	}
+
+	var course models.Course
+	result := c.App.DB.Model(&course).Where("id = ?", body.CourseID).Updates(updateData)
+	if result.Error != nil {
+		http.Error(w, "Error updating course", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

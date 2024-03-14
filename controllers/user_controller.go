@@ -13,9 +13,10 @@ import (
 
 // signupBody is the signup request body structure.
 type signupBody struct {
-	FullName string `json:"fullName"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
 }
 
 // loginBody is the login request body structure.
@@ -63,14 +64,10 @@ func (c *BaseController) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// parse name
-	fullNameSlice := strings.Split(body.FullName, " ")
-	firstName, lastName := fullNameSlice[0], fullNameSlice[1]
-
 	// create a new user model
 	user := models.User{
-		FirstName:  firstName,
-		LastName:   lastName,
+		FirstName:  body.FirstName,
+		LastName:   body.LastName,
 		Email:      body.Email,
 		Password:   string(hashedPassword),
 		UserTypeID: 1,

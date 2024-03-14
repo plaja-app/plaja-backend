@@ -370,7 +370,7 @@ func createInitialCourses(db *gorm.DB) error {
 
 		{
 			Title:            "Створення курсів на Plaja",
-			Thumbnail:        "http://localhost:8080/api/v1/storage/service/courses/c1_thumbnail.png",
+			Thumbnail:        "http://localhost:8080/api/v1/storage/service/courses/1-thumbnail.png",
 			ShortDescription: "Курс для тих, хто хоче навчитися створювати власні відкриті або платні курси на платформі Plaja.",
 			InstructorID:     1,
 			LevelID:          2,

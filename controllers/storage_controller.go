@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// GetImage returns the image from the application storage.
 func (c *BaseController) GetImage(w http.ResponseWriter, r *http.Request) {
 	basePath := "storage"
 
@@ -21,6 +22,11 @@ func (c *BaseController) GetImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := os.Stat(fullPath); err == nil {
+		// Add Cache-Control headers
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate") // HTTP 1.1.
+		w.Header().Set("Pragma", "no-cache")                                   // HTTP 1.0.
+		w.Header().Set("Expires", "0")                                         // Proxies.
+
 		http.ServeFile(w, r, fullPath)
 	} else {
 		http.NotFound(w, r)
