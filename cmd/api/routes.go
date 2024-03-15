@@ -38,7 +38,7 @@ func routes(app *config.AppConfig) http.Handler {
 		r.Post("/api/v1/teaching-applications/create", c.Controller.CreateTeachingApplication)
 
 		r.Post("/api/v1/course-certificates/create", c.Controller.CreateCourseCertificate)
-		r.Post("/api/v1/course-exercises/create", c.Controller.CreateCourseExercises)
+		r.Post("/api/v1/course-exercises/create-update", c.Controller.CreateOrUpdateCourseExercises)
 	})
 
 	r.Get("/api/v1/storage/*", c.Controller.GetImage)

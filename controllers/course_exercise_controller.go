@@ -18,19 +18,21 @@ type CourseExerciseInput struct {
 
 // ExerciseInput is the exercise input structure.
 type ExerciseInput struct {
+	ID      uint
 	Title   string
 	Content string
 }
 
-// CreateCourseExercises creates a new models.CourseExercise.
-func (c *BaseController) CreateCourseExercises(w http.ResponseWriter, r *http.Request) {
+// CreateOrUpdateCourseExercises creates new records of type models.CourseExercise or
+// updates the exising ones if ID is provided.
+func (c *BaseController) CreateOrUpdateCourseExercises(w http.ResponseWriter, r *http.Request) {
 	var body CourseExerciseInput
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Validate the instructor's permission to add exercises to the course
+	// Validate the instructor's permission to add or update exercises to the course
 	var course models.Course
 	if err := c.App.DB.First(&course, body.CourseID).Error; err != nil {
 		http.Error(w, "Course not found", http.StatusNotFound)
@@ -38,26 +40,55 @@ func (c *BaseController) CreateCourseExercises(w http.ResponseWriter, r *http.Re
 	}
 
 	if course.InstructorID != body.InstructorID {
-		http.Error(w, "Instructor not authorized to add exercises to this course", http.StatusUnauthorized)
+		http.Error(w, "Instructor not authorized to add or update exercises in this course", http.StatusUnauthorized)
 		return
 	}
 
-	// Create and save new exercises
 	for _, ex := range body.Exercises {
-		newExercise := models.CourseExercise{
-			CourseID:  body.CourseID,
-			TypeID:    1,
-			Length:    calculateExerciseLength(ex.Content),
-			Title:     ex.Title,
-			Content:   ex.Content,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		}
+		if ex.ID != 0 {
+			var existingExercise models.CourseExercise
+			if err := c.App.DB.First(&existingExercise, "id = ?", ex.ID).Error; err != nil {
+				http.Error(w, "Exercise not found", http.StatusNotFound)
+				return
+			}
 
-		if err := c.App.DB.Create(&newExercise).Error; err != nil {
-			http.Error(w, "Failed to add exercise", http.StatusInternalServerError)
-			return
+			existingExercise.Title = ex.Title
+			existingExercise.Content = ex.Content
+			existingExercise.Length = calculateExerciseLength(ex.Content)
+			existingExercise.UpdatedAt = time.Now()
+
+			if err := c.App.DB.Save(&existingExercise).Error; err != nil {
+				http.Error(w, "Failed to update exercise", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			newExercise := models.CourseExercise{
+				CourseID:  body.CourseID,
+				TypeID:    1, // Assuming TypeID is a fixed value as per your original logic
+				Length:    calculateExerciseLength(ex.Content),
+				Title:     ex.Title,
+				Content:   ex.Content,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			if err := c.App.DB.Create(&newExercise).Error; err != nil {
+				http.Error(w, "Failed to add exercise", http.StatusInternalServerError)
+				return
+			}
 		}
+	}
+
+	var totalCourseLength uint
+	if err := c.App.DB.Model(&models.CourseExercise{}).Where("course_id = ?", course.ID).Select("sum(length)").Row().Scan(&totalCourseLength); err != nil {
+		http.Error(w, "Failed to calculate total course length", http.StatusInternalServerError)
+		return
+	}
+
+	course.Length = totalCourseLength
+	if err := c.App.DB.Save(&course).Error; err != nil {
+		http.Error(w, "Failed to update course length", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -81,7 +112,7 @@ func (c *BaseController) GetCourseExercises(w http.ResponseWriter, r *http.Reque
 	var data []models.CourseExercise
 
 	if exerciseID == "all" {
-		c.App.DB.Where("course_id = ?", courseIDInt).Find(&data)
+		c.App.DB.Order("id").Where("course_id = ?", courseIDInt).Find(&data)
 	} else {
 		ids := strings.Split(exerciseID, ",")
 		var intIDs []int
@@ -93,12 +124,13 @@ func (c *BaseController) GetCourseExercises(w http.ResponseWriter, r *http.Reque
 			}
 			intIDs = append(intIDs, id)
 		}
-		c.App.DB.Where("id IN ? AND course_id = ?", intIDs, courseIDInt).Find(&data)
+		c.App.DB.Order("id").Where("id IN ? AND course_id = ?", intIDs, courseIDInt).Find(&data)
 	}
 
 	if len(data) == 0 {
-		http.NotFound(w, r)
-	} else {
-		json.NewEncoder(w).Encode(data)
+		data = make([]models.CourseExercise, 0)
+		w.WriteHeader(http.StatusOK)
 	}
+
+	json.NewEncoder(w).Encode(data)
 }

@@ -48,6 +48,7 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 	instructorID := query.Get("instructor_id")
 	levelID := query.Get("level_id")
 	hasCertificate := query.Get("has_certificate")
+	sort := query.Get("sort")
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -91,7 +92,30 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 		dbQuery = dbQuery.Where("has_certificate = ?", hasCertBool)
 	}
 
-	// TODO: Categories
+	if sort != "" {
+		direction := "ASC"
+		if sort[0] == '-' {
+			direction = "DESC"
+			sort = sort[1:]
+		}
+		allowedSortFields := map[string]bool{
+			"id":              true,
+			"name":            true,
+			"status_id":       true,
+			"instructor_id":   true,
+			"level_id":        true,
+			"has_certificate": true,
+			"updated_at":      true,
+			"created_at":      true,
+		}
+		if _, ok := allowedSortFields[sort]; ok {
+			dbQuery = dbQuery.Order(sort + " " + direction)
+		} else {
+			http.Error(w, "Invalid sort field", http.StatusBadRequest)
+			return
+		}
+	}
+
 	dbQuery = dbQuery.Preload("Instructor").Preload("Level").Preload("Categories")
 
 	if err := dbQuery.Find(&courses).Error; err != nil {
