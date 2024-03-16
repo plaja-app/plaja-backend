@@ -11,9 +11,10 @@ import (
 
 // CourseExerciseInput is the exercises input request body structure.
 type CourseExerciseInput struct {
-	Exercises    []ExerciseInput
-	InstructorID uint
-	CourseID     uint
+	Exercises         []ExerciseInput
+	InstructorID      uint
+	CourseID          uint
+	ExercisesToDelete []uint
 }
 
 // ExerciseInput is the exercise input structure.
@@ -32,7 +33,6 @@ func (c *BaseController) CreateOrUpdateCourseExercises(w http.ResponseWriter, r 
 		return
 	}
 
-	// Validate the instructor's permission to add or update exercises to the course
 	var course models.Course
 	if err := c.App.DB.First(&course, body.CourseID).Error; err != nil {
 		http.Error(w, "Course not found", http.StatusNotFound)
@@ -77,6 +77,10 @@ func (c *BaseController) CreateOrUpdateCourseExercises(w http.ResponseWriter, r 
 				return
 			}
 		}
+	}
+
+	if len(body.ExercisesToDelete) > 0 {
+		c.App.DB.Where("id IN ?", body.ExercisesToDelete).Delete(&models.CourseExercise{})
 	}
 
 	var totalCourseLength uint

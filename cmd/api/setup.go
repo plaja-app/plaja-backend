@@ -176,6 +176,11 @@ func runDatabaseMigrations(db *gorm.DB) error {
 		return errors.New(fmt.Sprint("error creating initial course exercise types:", err))
 	}
 
+	err = createInitialEnrollmentStatuses(db)
+	if err != nil {
+		return errors.New(fmt.Sprint("error creating initial enrollment statuses:", err))
+	}
+
 	return nil
 }
 
@@ -302,6 +307,31 @@ func createInitialCourseExerciseTypes(db *gorm.DB) error {
 	initialData := []models.CourseExerciseType{
 		{Title: "article", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 		{Title: "video", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+	}
+
+	if err := db.Create(&initialData).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createInitialEnrollmentStatuses creates initial course enrollment statuses in enrollment_statuses table.
+func createInitialEnrollmentStatuses(db *gorm.DB) error {
+	var count int64
+
+	if err := db.Model(&models.EnrollmentStatus{}).Count(&count).Error; err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return nil
+	}
+
+	initialData := []models.EnrollmentStatus{
+		{Title: "enrolled", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "completed", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		{Title: "certificated", CreatedAt: time.Now(), UpdatedAt: time.Now()},
 	}
 
 	if err := db.Create(&initialData).Error; err != nil {

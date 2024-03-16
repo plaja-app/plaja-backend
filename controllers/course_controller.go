@@ -119,16 +119,9 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 	dbQuery = dbQuery.Preload("Instructor").Preload("Level").Preload("Categories")
 
 	if err := dbQuery.Find(&courses).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.NotFound(w, r)
-		} else {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		return
-	}
-
-	if len(courses) == 0 {
-		http.NotFound(w, r)
 		return
 	}
 
