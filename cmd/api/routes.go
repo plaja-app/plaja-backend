@@ -19,13 +19,12 @@ func routes(app *config.AppConfig) http.Handler {
 
 	r.Get("/api/v1/course-certificates", c.Controller.GetCourseCertificates)
 
+	r.Get("/api/v1/users", c.Controller.GetUsers)
 	r.Post("/api/v1/users/signup", c.Controller.SignUp)
 	r.Post("/api/v1/users/login", c.Controller.Login)
 	r.Post("/api/v1/users/logout", c.Controller.Logout)
 
 	r.Get("/api/v1/enrollments", c.Controller.GetEnrollments)
-
-	r.Get("/api/v1/users", c.Controller.GetUsers)
 
 	r.Get("/api/v1/course-exercises", c.Controller.GetCourseExercises)
 
@@ -35,7 +34,7 @@ func routes(app *config.AppConfig) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(m.Middleware.RequireAuth)
 		r.Get("/api/v1/users/getme", c.Controller.GetMe)
-		r.Post("/api/v1/users/update-user", c.Controller.UpdateUser)
+		r.Post("/api/v1/users/update-general", c.Controller.UpdateUser)
 
 		r.Post("/api/v1/courses/create", c.Controller.CreateCourse)
 		r.Post("/api/v1/courses/update-general", c.Controller.UpdateGeneralCourse)

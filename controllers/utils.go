@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/plaja-app/back-end/models"
 	"net/http"
+	"net/mail"
 	"strings"
 )
 
@@ -74,4 +75,10 @@ func (c *BaseController) GetCourseCategoriesAndLevelsStats(w http.ResponseWriter
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
+}
+
+// validateEmail validates the email address.
+func validateEmail(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }

@@ -12,7 +12,6 @@ import (
 
 // enrollmentBody is the course enrollment request body structure.
 type enrollmentBody struct {
-	UserID   uint
 	CourseID uint
 }
 
@@ -81,9 +80,21 @@ func (c *BaseController) CreateEnrollment(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	userCtx := r.Context().Value("user")
+	if userCtx == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, ok := userCtx.(models.User)
+	if !ok {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	var enrollment models.Enrollment
 	enrollment = models.Enrollment{
-		UserID:         body.UserID,
+		UserID:         user.ID,
 		CourseID:       body.CourseID,
 		StatusID:       1, // enrolled
 		Progress:       0,

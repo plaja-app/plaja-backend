@@ -2,10 +2,14 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plaja-app/back-end/models"
 	"golang.org/x/crypto/bcrypt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -25,7 +29,13 @@ type loginBody struct {
 	Password string `json:"password"`
 }
 
-// GetMe returns the model of the current user (see models.User).
+// userUpdateGeneralBody is the user general information update request body structure.
+type userUpdateGeneralBody struct {
+	FirstName string
+	LastName  string
+}
+
+// GetMe returns the model of the current models.User.
 func (c *BaseController) GetMe(w http.ResponseWriter, r *http.Request) {
 	userCtx := r.Context().Value("user")
 	if userCtx == nil {
@@ -54,6 +64,14 @@ func (c *BaseController) SignUp(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	if err != nil {
 		http.Error(w, "Failed to read body", http.StatusBadRequest)
+		return
+	}
+
+	if body.FirstName == "" ||
+		body.LastName == "" ||
+		!validateEmail(body.Email) ||
+		len(body.Password) < 8 {
+		http.Error(w, "Bad credentials provided", http.StatusBadRequest)
 		return
 	}
 
@@ -196,42 +214,68 @@ func (c *BaseController) GetUsers(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUser handles the update request of the user's information.
 func (c *BaseController) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	//var body signupBody
-	//
-	//// decode the request body
-	//err := json.NewDecoder(r.Body).Decode(&body)
-	//defer r.Body.Close()
-	//if err != nil {
-	//	http.Error(w, "Failed to read body", http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//// hash password
-	//hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
-	//if err != nil {
-	//	http.Error(w, "Error hashing password", http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//// parse name
-	//fullNameSlice := strings.Split(body.FullName, " ")
-	//firstName, lastName := fullNameSlice[0], fullNameSlice[1]
-	//
-	//// create a new user model
-	//user := models.User{
-	//	FirstName:  firstName,
-	//	LastName:   lastName,
-	//	Email:      body.Email,
-	//	Password:   string(hashedPassword),
-	//	UserTypeID: 1,
-	//}
-	//
-	//// add user to the database
-	//result := c.App.DB.Create(&user)
-	//if result.Error != nil {
-	//	http.Error(w, "Error creating user", http.StatusConflict)
-	//	return
-	//}
-	//
-	//w.WriteHeader(http.StatusCreated)
+	err := r.ParseMultipartForm(10 << 20) // 10 MB
+	if err != nil {
+		http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+		return
+	}
+
+	var body userUpdateGeneralBody
+	body.FirstName = r.FormValue("FirstName")
+	body.LastName = r.FormValue("LastName")
+
+	userCtx := r.Context().Value("user")
+	if userCtx == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, ok := userCtx.(models.User)
+	if !ok {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var fileURL string
+
+	file, _, err := r.FormFile("ProfilePic")
+	if err == nil && file != nil {
+		defer file.Close()
+
+		storagePath := "storage/users/profile-pictures"
+		os.MkdirAll(storagePath, os.ModePerm)
+
+		filePath := filepath.Join(storagePath, fmt.Sprintf("%d-%s", user.ID, "pp.png"))
+
+		dst, err := os.Create(filePath)
+		if err != nil {
+			http.Error(w, "Failed to save the file", http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+		_, err = io.Copy(dst, file)
+		if err != nil {
+			http.Error(w, "Failed to write the file", http.StatusInternalServerError)
+			return
+		}
+
+		fileURL = fmt.Sprintf("http://localhost:8080/api/v1/%s", filePath)
+	}
+
+	updateData := map[string]interface{}{
+		"FirstName": body.FirstName,
+		"LastName":  body.LastName,
+	}
+
+	if fileURL != "" {
+		updateData["ProfilePic"] = fileURL
+	}
+
+	result := c.App.DB.Model(&user).Where("id = ?", user.ID).Updates(updateData)
+	if result.Error != nil {
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

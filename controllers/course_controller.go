@@ -26,7 +26,7 @@ type courseCreationBody struct {
 	Categories     []courseCategory
 	LevelID        uint
 	HasCertificate bool
-	InstructorID   uint
+	// InstructorID   uint
 }
 
 // courseUpdateGeneralBody is the course general information update request body structure.
@@ -35,8 +35,8 @@ type courseUpdateGeneralBody struct {
 	ShortDescription string
 	Description      string
 	Price            uint
-	InstructorID     uint
-	CourseID         uint
+	// InstructorID     uint
+	CourseID uint
 }
 
 // GetCourses returns the queried list of models.Course.
@@ -44,6 +44,7 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
 	id := query.Get("id")
+	userID := query.Get("user_id")
 	statusID := query.Get("status_id")
 	instructorID := query.Get("instructor_id")
 	levelID := query.Get("level_id")
@@ -81,6 +82,10 @@ func (c *BaseController) GetCourses(w http.ResponseWriter, r *http.Request) {
 
 	if levelID != "" {
 		dbQuery = dbQuery.Where("level_id = ?", levelID)
+	}
+
+	if userID != "" {
+		dbQuery = dbQuery.Joins("JOIN enrollments ON enrollments.course_id = courses.id").Where("enrollments.user_id = ?", userID)
 	}
 
 	if hasCertificate != "" {
@@ -149,6 +154,18 @@ func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 		courseCategories = append(courseCategories, category)
 	}
 
+	userCtx := r.Context().Value("user")
+	if userCtx == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, ok := userCtx.(models.User)
+	if !ok {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	var course models.Course
 	course = models.Course{
 		Title:          body.Title,
@@ -157,7 +174,7 @@ func (c *BaseController) CreateCourse(w http.ResponseWriter, r *http.Request) {
 		LevelID:        body.LevelID,
 		StatusID:       1, // draft
 		HasCertificate: body.HasCertificate,
-		InstructorID:   body.InstructorID,
+		InstructorID:   user.ID,
 	}
 
 	result := c.App.DB.Create(&course)
@@ -196,12 +213,24 @@ func (c *BaseController) UpdateGeneralCourse(w http.ResponseWriter, r *http.Requ
 	}
 	body.CourseID = uint(courseID)
 
-	instructorID, err := strconv.ParseUint(r.FormValue("InstructorID"), 10, 32)
-	if err != nil {
-		http.Error(w, "Invalid instructor id", http.StatusBadRequest)
+	//instructorID, err := strconv.ParseUint(r.FormValue("InstructorID"), 10, 32)
+	//if err != nil {
+	//	http.Error(w, "Invalid instructor id", http.StatusBadRequest)
+	//	return
+	//}
+	//body.InstructorID = uint(instructorID)
+
+	userCtx := r.Context().Value("user")
+	if userCtx == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	body.InstructorID = uint(instructorID)
+
+	user, ok := userCtx.(models.User)
+	if !ok {
+		http.Error(w, "Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	var fileURL string
 
@@ -234,7 +263,7 @@ func (c *BaseController) UpdateGeneralCourse(w http.ResponseWriter, r *http.Requ
 		"Title":            body.Title,
 		"Description":      body.Description,
 		"Price":            body.Price,
-		"InstructorID":     body.InstructorID,
+		"InstructorID":     user.ID,
 	}
 
 	if fileURL != "" {
